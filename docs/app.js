@@ -3,11 +3,8 @@ const playlist = document.querySelector("#playlist");
 const status = document.querySelector("#status");
 const range = document.querySelector("#range");
 
-const BILLBOARD_BASE = "https://www.billboard.com/charts/hot-100/";
-const PROXIES = [
-  (url) => `https://r.jina.ai/http://${url}`,
-  (url) => `https://r.jina.ai/http://r.jina.ai/http://${url}`,
-];
+const BILLBOARD_JSON_BASE =
+  "https://cdn.jsdelivr.net/gh/mhollingshead/billboard-hot-100@main/data";
 
 const formatDate = (date) => date.toISOString().split("T")[0];
 
@@ -22,99 +19,36 @@ const addYearsSafely = (date, years) => {
 
 const cleanText = (value) => value?.replace(/\s+/g, " ").trim();
 
-const findEntriesArray = (data) => {
-  const queue = [data];
+const normalizeEntries = (entries) =>
+  (entries || [])
+    .map((entry) => ({
+      title: cleanText(entry.title || entry.song || entry.songTitle),
+      artist: cleanText(entry.artist || entry.artistName),
+    }))
+    .filter((entry) => entry.title && entry.artist);
 
-  while (queue.length) {
-    const current = queue.shift();
-    if (!current) {
-      continue;
-    }
+const fetchChartEntries = async (dateString) => {
+  const year = dateString.slice(0, 4);
+  const url = `${BILLBOARD_JSON_BASE}/${year}/${dateString}.json`;
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed with ${response.status}`);
+  }
 
-    if (Array.isArray(current)) {
-      if (current.length) {
-        const hasTitles = current.some(
-          (item) =>
-            item &&
-            typeof item === "object" &&
-            (("title" in item && "artist" in item) ||
-              ("song" in item && "artist" in item) ||
-              ("title" in item && "artistName" in item))
-        );
-        if (hasTitles) {
-          return current;
-        }
-      }
-      current.forEach((item) => queue.push(item));
-    } else if (typeof current === "object") {
-      Object.values(current).forEach((value) => queue.push(value));
-    }
+  const data = await response.json();
+  if (Array.isArray(data)) {
+    return normalizeEntries(data);
+  }
+
+  if (data && Array.isArray(data.data)) {
+    return normalizeEntries(data.data);
+  }
+
+  if (data && Array.isArray(data.songs)) {
+    return normalizeEntries(data.songs);
   }
 
   return [];
-};
-
-const parseChartHtml = (html) => {
-  const doc = new DOMParser().parseFromString(html, "text/html");
-
-  const nextData = doc.querySelector("#__NEXT_DATA__");
-  if (nextData?.textContent) {
-    try {
-      const parsed = JSON.parse(nextData.textContent);
-      const entries = findEntriesArray(parsed);
-      if (entries.length) {
-        return entries
-          .map((entry) => ({
-            title: cleanText(entry.title || entry.song),
-            artist: cleanText(entry.artist || entry.artistName),
-          }))
-          .filter((entry) => entry.title && entry.artist);
-      }
-    } catch (error) {
-      console.warn("Could not parse Next.js data", error);
-    }
-  }
-
-  const dataRows = [...doc.querySelectorAll("[data-artist][data-title]")];
-  if (dataRows.length) {
-    return dataRows
-      .map((row) => ({
-        title: cleanText(row.getAttribute("data-title")),
-        artist: cleanText(row.getAttribute("data-artist")),
-      }))
-      .filter((entry) => entry.title && entry.artist);
-  }
-
-  const regex = /data-title="([^"]+)"[^>]*data-artist="([^"]+)"/g;
-  const matches = [];
-  let match;
-  while ((match = regex.exec(html)) !== null) {
-    matches.push({
-      title: cleanText(match[1]),
-      artist: cleanText(match[2]),
-    });
-  }
-  return matches;
-};
-
-const fetchChartHtml = async (dateString) => {
-  const url = `${BILLBOARD_BASE}${dateString}`;
-  let lastError;
-
-  for (const buildProxyUrl of PROXIES) {
-    try {
-      const response = await fetch(buildProxyUrl(url));
-      if (!response.ok) {
-        lastError = new Error(`Failed with ${response.status}`);
-        continue;
-      }
-      return await response.text();
-    } catch (error) {
-      lastError = error;
-    }
-  }
-
-  throw lastError || new Error("Unable to reach chart data.");
 };
 
 const renderSongs = (songs) => {
@@ -188,8 +122,7 @@ form.addEventListener("submit", async (event) => {
       const dateString = formatDate(current);
       status.textContent = `Fetching ${dateString} chart…`;
       // eslint-disable-next-line no-await-in-loop
-      const html = await fetchChartHtml(dateString);
-      const entries = parseChartHtml(html);
+      const entries = await fetchChartEntries(dateString);
       const picks = entries.slice(0, count).map((song) => ({
         title: song.title,
         artist: song.artist,
@@ -212,6 +145,6 @@ form.addEventListener("submit", async (event) => {
   } catch (error) {
     console.error(error);
     status.textContent =
-      "Unable to reach Billboard right now. Please try again later.";
+      "Unable to reach the chart data right now. Please try again later.";
   }
 });
