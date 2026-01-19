@@ -16,10 +16,10 @@ Spotify.
 
 ## Running locally
 
-Because the app is static, you can serve the `public/` directory with any simple web server:
+Because the app is static, you can serve the repository root with any simple web server:
 
 ```bash
-python -m http.server 4173 --directory public
+python -m http.server 4173
 ```
 
 Then open `http://localhost:4173` in your browser.
@@ -27,9 +27,10 @@ Then open `http://localhost:4173` in your browser.
 ## Deploying to GitHub Pages
 
 1. Push the repository to GitHub.
-2. Enable GitHub Pages in the repository settings and point it to the `public/` folder.
+2. Enable GitHub Pages in the repository settings and point it to the root of the default
+   branch (or the `docs/` folder if you prefer that option).
 3. Visit the provided Pages URL.
 
 > **Note**
 > The browser fetches Billboard chart pages through a public CORS proxy so it can run without a
-> server. If the proxy is unavailable, try again later or update the proxy URL in `public/app.js`.
+> server. If the proxy is unavailable, try again later or update the proxy URL in `app.js`.
