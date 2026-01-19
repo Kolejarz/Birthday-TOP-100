@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Birthday Hot 100 Playlist</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="page">
+      <header class="hero">
+        <p class="eyebrow">Billboard Hot 100</p>
+        <h1>Build your birthday playlist</h1>
+        <p class="subtitle">
+          Enter your birth date and choose how many songs to pull from each yearly chart.
+          We grab the Hot 100 that landed right after your birthday and keep going until today.
+        </p>
+      </header>
+
+      <section class="card">
+        <form id="playlist-form">
+          <label class="field">
+            <span>Birth date</span>
+            <input type="date" name="birth" required />
+          </label>
+          <label class="field">
+            <span>Songs per year</span>
+            <input type="number" name="count" min="1" max="20" value="5" required />
+          </label>
+          <button type="submit">Generate playlist</button>
+        </form>
+        <p class="helper" id="status">Ready when you are.</p>
+      </section>
+
+      <section class="results">
+        <div class="results-header">
+          <h2>Playlist</h2>
+          <p id="range"></p>
+        </div>
+        <ol id="playlist" class="playlist"></ol>
+      </section>
+    </main>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
