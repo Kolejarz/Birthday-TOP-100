@@ -4,6 +4,6 @@
   "description": "Generate a birthday-based Billboard Hot 100 playlist.",
   "type": "module",
   "scripts": {
-    "start": "python -m http.server 4173 --directory public"
+    "start": "python -m http.server 4173"
   }
 }
